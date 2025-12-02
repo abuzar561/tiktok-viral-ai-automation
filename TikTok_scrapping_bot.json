@@ -1,0 +1,149 @@
+{
+  "name": "TikTok_scrapping_bot",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -176
+      ],
+      "id": "8e5c1153-14cf-4fc3-ba18-6d126dbb0a01",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://10.2.0.2:5000/scrape",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"hashtag\": \"funny\",\n  \"limit\": 3\n}",
+        "options": {
+          "timeout": 120
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -128,
+        -176
+      ],
+      "id": "9d5e92d5-d39d-4a93-80de-90cf962146ed",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messageValues": [
+            {}
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        304,
+        -176
+      ],
+      "id": "92341e36-cf63-499d-b093-0eb3845e921e",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        224,
+        48
+      ],
+      "id": "a5c957f0-1393-4b9c-a1ae-c79f92562ab6",
+      "name": "Ollama Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "7SMr5SZ9J2m0SUhM",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// HTTP Request node se aaya hua data (All Items)\nconst allVideos = items.map(item => item.json);\n\n// Ek string banayenge jisme saare videos ki details hongi\nlet videoContext = \"Here is the list of scraped TikTok videos:\\n\\n\";\n\nallVideos.forEach((video, index) => {\n  videoContext += `Video ${index + 1}:\\n`;\n  videoContext += `- Author: ${video.author}\\n`;\n  videoContext += `- Views: ${video.playCount}\\n`;\n  videoContext += `- Likes: ${video.diggCount}\\n`;\n  videoContext += `- Shares: ${video.shareCount}\\n`;\n  videoContext += `- Description: ${video.description_full}\\n`;\n  videoContext += `- Hashtags: ${video.hashtags.join(\", \")}\\n`;\n  videoContext += \"-----------------------------------\\n\";\n});\n\n// Output ko ek single item bana kar return karte hain taaki Ollama ek baar run ho\nreturn [\n  {\n    json: {\n      prompt_text: videoContext\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -176
+      ],
+      "id": "370b2e71-906d-4e57-af06-b472e86aeb8c",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a5f57cbe-a7ce-4f33-b371-0d718c1859c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e69f089b795310074eb38fc67139f3b2e1c1ddd3bcac5b1487453f89f4bec9cc"
+  },
+  "id": "PWPjzAUTA5nHWvK5",
+  "tags": []
+}
