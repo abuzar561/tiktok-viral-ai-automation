@@ -19,9 +19,8 @@ app = Flask(__name__)
 # ==========================================
 # CONFIGURATION
 # ==========================================
-HEADLESS_MODE = True  # API ke liye Headless True rakha hai taaki background me chale
-# TARGET_HASHTAG aur TARGET_SAVED_VIDEOS ab n8n se aayenge
-
+HEADLESS_MODE = True  # I have kept the headers for you so that you can go to the background
+# Target_Hashtag and Target_Sud_Videos will now come from N8n
 def extract_hashtags(description):
     if not description: return []
     return re.findall(r"#\w+", description)
@@ -29,7 +28,7 @@ def extract_hashtags(description):
 def get_video_details_and_time(driver, video_url):
     try:
         driver.get(video_url)
-        time.sleep(random.uniform(2, 4)) # Time thoda kam kiya hai for faster API response
+        time.sleep(random.uniform(2, 4)) # Time is reduced a bit for faster app response
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
 
@@ -68,7 +67,7 @@ def get_video_details_and_time(driver, video_url):
         print(f"Error scraping details: {e}")
         return None
 
-# Main scraping logic ko function banaya jo parameters accept kare
+# I made the scraping logic a function that accepts parameters.
 def scrape_tiktok_data(target_hashtag, max_videos):
     options = Options()
     if HEADLESS_MODE: options.add_argument("--headless=new")
@@ -128,7 +127,7 @@ def scrape_tiktok_data(target_hashtag, max_videos):
                 all_scraped_data.append(record)
                 saved_count_session += 1
             
-            # Thoda wait taaki block na ho, lekin API timeout se bachne ke liye kam rakha hai
+            #A little wait so it doesn't get blocked, but it's kept low to avoid over-emphasis.
             time.sleep(random.uniform(1, 3))
 
     except Exception as e:
@@ -138,27 +137,27 @@ def scrape_tiktok_data(target_hashtag, max_videos):
     finally:
         driver.quit()
     
-    # Yaha hum directly list return kar rahe hain, file save nahi kar rahe
-    return all_scraped_data
+# Here we are returning a list of strings, not a file.
+return all_scraped_data
 
 # ==========================================
 # API ROUTE FOR N8N
 # ==========================================
 @app.route('/scrape', methods=['POST'])
 def run_scraper():
-    # n8n se JSON data receive karna
+# Receiving JSON data from N8N
     content = request.json
     
-    # Default values agar n8n kuch na bheje
+# Default will if n8n doesn't send anything
     hashtag = content.get('hashtag', 'funny')
     limit = content.get('limit', 5) # Default 5 videos
 
     print(f"API Request Received: Hashtag={hashtag}, Limit={limit}")
 
-    # Scraping function call karna
+# Calling the scraping function
     data = scrape_tiktok_data(hashtag, int(limit))
 
-    # Data ko JSON format mein return karna
+# Returning data in JSON format
     return jsonify(data)
 
 if __name__ == "__main__":
