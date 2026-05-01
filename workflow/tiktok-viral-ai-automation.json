@@ -1,0 +1,144 @@
+{
+  "name": "TikTok Viral AI Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -176
+      ],
+      "id": "8e5c1153-14cf-4fc3-ba18-6d126dbb0a01",
+      "name": "Manual Test Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/scrape",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"hashtag\": \"funny\",\n  \"limit\": 5\n}",
+        "options": {
+          "timeout": 120
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -128,
+        -176
+      ],
+      "id": "9d5e92d5-d39d-4a93-80de-90cf962146ed",
+      "name": "Scrape TikTok Trends"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt_text }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are an ethical viral-content strategist. Create original ideas from trend patterns without copying specific creators, private data, or copyrighted material. Return strict JSON only."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        304,
+        -176
+      ],
+      "id": "92341e36-cf63-499d-b093-0eb3845e921e",
+      "name": "Generate Viral Script"
+    },
+    {
+      "parameters": {
+        "model": "llama3.1",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmOllama",
+      "typeVersion": 1,
+      "position": [
+        224,
+        48
+      ],
+      "id": "a5c957f0-1393-4b9c-a1ae-c79f92562ab6",
+      "name": "Ollama Chat Model"
+    },
+    {
+      "parameters": {
+        "jsCode": "const videos = items.map((item) => item.json).filter((video) => video && !video.error);\n\nif (videos.length === 0) {\n  throw new Error('No valid TikTok videos were returned by the scraper API.');\n}\n\nconst rankedVideos = videos\n  .map((video) => {\n    const views = Number(video.playCount || 0);\n    const likes = Number(video.diggCount || 0);\n    const comments = Number(video.commentCount || 0);\n    const shares = Number(video.shareCount || 0);\n    const saves = Number(video.collectCount || 0);\n    const engagement = likes + comments * 2 + shares * 3 + saves * 2;\n    const engagementRate = views > 0 ? engagement / views : 0;\n\n    return {\n      ...video,\n      engagementScore: engagement,\n      engagementRate: Number(engagementRate.toFixed(4)),\n    };\n  })\n  .filter((video) => video.author && video.author !== 'Unknown')\n  .sort((a, b) => b.engagementRate - a.engagementRate);\n\nconst topVideos = rankedVideos.slice(0, 5);\n\nconst trendContext = topVideos\n  .map((video, index) => [\n    'Video ' + (index + 1),\n    'Author: ' + video.author,\n    'Views: ' + video.playCount,\n    'Likes: ' + video.diggCount,\n    'Comments: ' + video.commentCount,\n    'Shares: ' + video.shareCount,\n    'Saves: ' + video.collectCount,\n    'Engagement rate: ' + video.engagementRate,\n    'Description: ' + (video.description_full || 'No description'),\n    'Hashtags: ' + (Array.isArray(video.hashtags) ? video.hashtags.join(', ') : ''),\n    'Link: ' + video.video_link,\n  ].join('\\n'))\n  .join('\\n---\\n');\n\nconst prompt = [\n  'You are a short-form content strategist.',\n  'Analyze these TikTok videos and create one original video idea inspired by the strongest pattern.',\n  'Do not copy creators, captions, or copyrighted concepts.',\n  '',\n  'Return only valid JSON with these keys:',\n  '- trend_summary',\n  '- winning_pattern',\n  '- original_hook',\n  '- video_script',\n  '- caption',\n  '- suggested_hashtags',\n  '- production_notes',\n  '',\n  'Scraped trend data:',\n  trendContext,\n].join('\\n');\n\nreturn [{ json: { prompt_text: prompt, top_videos: topVideos } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -176
+      ],
+      "id": "370b2e71-906d-4e57-af06-b472e86aeb8c",
+      "name": "Build Trend Prompt"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Scrape TikTok Trends",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Viral Script",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Viral Script": {
+      "main": [
+        []
+      ]
+    },
+    "Scrape TikTok Trends": {
+      "main": [
+        [
+          {
+            "node": "Build Trend Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Trend Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Viral Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

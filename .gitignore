@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# Local config and secrets
+.env
+.env.*
+!.env.example
+credentials*.json
+secrets/
+
+# Browser and scraper output
+downloads/
+exports/
+output/
+tmp/
+*.log
+*.jsonl
+
+# n8n local data
+.n8n/
+n8n*.db
+n8n*.sqlite
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
